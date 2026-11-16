@@ -1,0 +1,10 @@
+<?php
+require_once __DIR__ . '/config/config.php'; require_login();
+$me=current_user($pdo);$error='';
+if($_SERVER['REQUEST_METHOD']==='POST'){
+ if(!csrf_check())$error='Session expirée. Réessaie.';
+ elseif(empty($_POST['accept_terms'])||empty($_POST['accept_privacy'])||empty($_POST['accept_community']))$error='Tu dois accepter les trois documents pour continuer.';
+ else{$pdo->prepare('UPDATE users SET terms_accepted_at=COALESCE(terms_accepted_at,NOW()), privacy_accepted_at=COALESCE(privacy_accepted_at,NOW()), community_accepted_at=COALESCE(community_accepted_at,NOW()) WHERE id=?')->execute([$me['id']]);redirect('index.php');}
+}
+$pageTitle='Validation des règles';require __DIR__.'/includes/header.php';?>
+<section class="legal-page card"><span class="pill">Action requise</span><h1>Bienvenue sur CLASH v2</h1><p>Nos documents communautaires ont été mis à jour. Pour continuer à utiliser ton compte, lis et accepte les trois documents ci-dessous.</p><?php if($error):?><div class="alert alert--error"><?=clean($error)?></div><?php endif;?><form method="post" class="form"><input type="hidden" name="csrf_token" value="<?=csrf_token()?>"><div class="legal-consents"><label><input type="checkbox" name="accept_terms" value="1" required> J'accepte les <a href="<?=BASE_URL?>/legal.php?doc=terms" target="_blank" rel="noopener">Conditions d'utilisation</a>.</label><label><input type="checkbox" name="accept_privacy" value="1" required> J'ai lu la <a href="<?=BASE_URL?>/legal.php?doc=privacy" target="_blank" rel="noopener">Politique de confidentialité</a>.</label><label><input type="checkbox" name="accept_community" value="1" required> J'accepte les <a href="<?=BASE_URL?>/legal.php?doc=community" target="_blank" rel="noopener">Standards de la communauté</a>.</label></div><button class="btn btn--primary btn--lg btn--block" type="submit">Accepter et continuer</button></form></section><?php require __DIR__.'/includes/footer.php';?>

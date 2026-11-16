@@ -1,0 +1,34 @@
+# CLASH — sécurité de base au niveau du serveur (Apache)
+
+# En-têtes de sécurité (doublon volontaire avec config.php, pour les fichiers statiques)
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Fichiers sensibles / de maintenance : jamais téléchargeables
+<FilesMatch "(?i)\.(sql|md|log|ini|sh|bak|dist|example|lock)$|^\.(gitignore|user\.ini)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(\.git|\.env)">
+    Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Dossiers internes
+    RewriteRule ^(migrations|\.git)(/|$) - [F,L]
+    # Aucune exécution de PHP dans les uploads (filet de sécurité supplémentaire)
+    RewriteRule ^assets/uploads/.*\.(php|phtml|php[0-9]?|phar)$ - [F,L]
+</IfModule>
+
+# Pas de listing de répertoires
+Options -Indexes
+
+# Limites d'upload cohérentes avec MAX_FILE_SIZE / MAX_MEDIA_PER_POST
+# (php.ini par défaut : 2 Mo / 8 Mo, ce qui casse les publications avec photos)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 30M
+    php_value post_max_size 260M
+    php_value max_file_uploads 12
+</IfModule>
